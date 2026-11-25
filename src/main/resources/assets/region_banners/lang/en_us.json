@@ -1,13 +1,2 @@
 {
-  "itemGroup.region_banners": "Example Mod Tab",
-  "block.region_banners.example_block": "Example Block",
-  "item.region_banners.example_item": "Example Item",
-
-  "region_banners.configuration.title": "Region Banners Configs",
-  "region_banners.configuration.section.region_banners.common.toml": "Region Banners Configs",
-  "region_banners.configuration.section.region_banners.common.toml.title": "Region Banners Configs",
-  "region_banners.configuration.items": "Item List",
-  "region_banners.configuration.logDirtBlock": "Log Dirt Block",
-  "region_banners.configuration.magicNumberIntroduction": "Magic Number Text",
-  "region_banners.configuration.magicNumber": "Magic Number"
 }
