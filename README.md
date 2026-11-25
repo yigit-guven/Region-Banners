@@ -1,27 +1,18 @@
-<p align="center">
-  <img src="src/main/resources/region_banners.png" alt="Region Banners Icon" width="96" />
-</p>
-
 # Region Banners
 
-A client-side NeoForge addon for [Xaero Regions](https://github.com/AxelEncore/Xaero-Regions) that lets you use any held Minecraft banner as a region icon on the world map.
-
-![Region Banners Workflow](docs/images/workflow-preview.png)
+An addon for [Xaero Regions](https://github.com/AxelEncore/Xaero-Regions) that lets you turn any held Minecraft banner into a region icon on the world map.
 
 ## What It Does
 
-- Hold any Minecraft banner in your main hand or offhand and open a region's edit screen in Xaero Regions.
-- Click the **Import Banner Icon** button to convert the held banner (base color and all pattern layers) into a map icon.
-- Click **Save** to apply the banner as that region's icon.
-- Works in multiplayer as a client-side addon—icons are synced through Xaero Regions, uploaded only when saved, and deduplicated so identical banners don't waste server storage.
+- Hold a Minecraft banner in your main hand or offhand and open a region's edit screen in Xaero Regions.
+- Click the **Import Banner Icon** button to convert the banner (base color and all pattern layers) into a map icon.
+- Click **Save** to set that banner as the region's icon.
 
-![Banner to Map Icon Examples](docs/images/banner-icons.png)
+## Multiplayer
 
-## Requirements
-
-- Minecraft (NeoForge)
-- Xaero Regions
-- Xaero's World Map
+- **Everyone sees it:** Once you save a banner icon, Xaero Regions syncs it through the server so all other players see that banner icon on their map too.
+- **Client-side only:** Only the player importing banner icons needs this addon installed—neither the server nor other players need it to see the synced banner icons.
+- **Storage-friendly:** Banner icons are only uploaded when you click **Save** and are deduplicated so identical banners aren't stored twice on the server.
 
 ## License
 
