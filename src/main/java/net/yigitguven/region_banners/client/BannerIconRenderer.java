@@ -4,7 +4,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.UUID;
 import javax.imageio.ImageIO;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.component.DataComponents;
@@ -31,9 +33,26 @@ public final class BannerIconRenderer {
 
     public static String buildFileName(ItemStack bannerStack) {
         if (bannerStack.getItem() instanceof BannerItem bannerItem) {
-            return bannerItem.getColor().getName() + "_banner.png";
+            return "rb_" + bannerItem.getColor().getName() + "_banner.png";
         }
-        return "banner.png";
+        return "rb_banner.png";
+    }
+
+    public static UUID computeBannerUuid(ItemStack bannerStack) {
+        if (!(bannerStack.getItem() instanceof BannerItem bannerItem)) {
+            throw new IllegalArgumentException("ItemStack is not a BannerItem");
+        }
+        StringBuilder canonical = new StringBuilder("region_banners:v1:")
+                .append(bannerItem.getColor().getSerializedName());
+        BannerPatternLayers layers = bannerStack.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY);
+        for (BannerPatternLayers.Layer layer : layers.layers()) {
+            ResourceLocation assetId = layer.pattern().value().assetId();
+            canonical.append('|')
+                    .append(assetId)
+                    .append('=')
+                    .append(layer.color().getSerializedName());
+        }
+        return UUID.nameUUIDFromBytes(canonical.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     public static byte[] renderBannerPng(ItemStack bannerStack) throws IOException {

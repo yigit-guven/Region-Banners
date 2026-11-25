@@ -1,6 +1,7 @@
 package net.yigitguven.region_banners.client;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -13,6 +14,9 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.yigitguven.region_banners.RegionBanners;
 
 public final class RegionEditScreenHandler {
+    private record PendingBannerUpload(UUID iconId, byte[] pngBytes, String fileName) {
+    }
+
     private RegionEditScreenHandler() {
     }
 
@@ -30,7 +34,9 @@ public final class RegionEditScreenHandler {
 
         Button uploadButton = null;
         Button iconButton = null;
+        Button saveButton = null;
         Component uploadLabel = Component.translatable("xaeroregions.button.upload_icon");
+        Component saveLabel = Component.translatable("xaeroregions.button.save");
 
         for (GuiEventListener listener : event.getListenersList()) {
             if (!(listener instanceof Button button)) {
@@ -43,6 +49,38 @@ public final class RegionEditScreenHandler {
             if (iconButton == null && message.getString().startsWith("Icon:")) {
                 iconButton = button;
             }
+            if (saveButton == null && saveLabel.equals(message)) {
+                saveButton = button;
+            }
+        }
+
+        final AtomicReference<PendingBannerUpload> pendingUpload = new AtomicReference<>();
+
+        if (saveButton != null) {
+            final Button originalSave = saveButton;
+            event.removeListener(originalSave);
+            Button wrappedSave = Button.builder(originalSave.getMessage(), button -> {
+                PendingBannerUpload pending = pendingUpload.getAndSet(null);
+                if (pending != null
+                        && pending.iconId().equals(XaeroRegionsBridge.getCurrentCustomIconId(screen))
+                        && !XaeroRegionsBridge.hasCachedIcon(pending.iconId())) {
+                    if (!XaeroRegionsBridge.hasClientPermission(screen)) {
+                        return;
+                    }
+                    try {
+                        XaeroRegionsBridge.uploadIcon(pending.iconId(), pending.pngBytes(), pending.fileName());
+                        RegionBanners.LOGGER.debug("Uploaded deferred banner icon {} ({})", pending.fileName(), pending.iconId());
+                    } catch (Exception e) {
+                        RegionBanners.LOGGER.error("Failed to upload banner icon to Xaero Regions", e);
+                        if (mc.player != null) {
+                            mc.player.displayClientMessage(Component.translatable("region_banners.message.import_failed"), true);
+                        }
+                        return;
+                    }
+                }
+                originalSave.onPress();
+            }).bounds(originalSave.getX(), originalSave.getY(), originalSave.getWidth(), originalSave.getHeight()).build();
+            event.addListener(wrappedSave);
         }
 
         int x;
@@ -60,6 +98,7 @@ public final class RegionEditScreenHandler {
         }
 
         final Button iconButtonRef = iconButton;
+        final boolean hasWrappedSave = saveButton != null;
         Button importButton = Button.builder(Component.translatable("region_banners.button.import_banner_icon"), button -> {
             ItemStack currentBanner = findHeldBanner(mc.player);
             if (currentBanner.isEmpty()) {
@@ -73,10 +112,21 @@ public final class RegionEditScreenHandler {
             }
 
             try {
-                byte[] pngBytes = BannerIconRenderer.renderBannerPng(currentBanner);
-                String fileName = BannerIconRenderer.buildFileName(currentBanner);
-                UUID iconId = XaeroRegionsBridge.uploadAndApplyBannerIcon(screen, pngBytes, fileName);
-                RegionBanners.LOGGER.debug("Imported held banner icon {} ({})", fileName, iconId);
+                UUID iconId = BannerIconRenderer.computeBannerUuid(currentBanner);
+                if (XaeroRegionsBridge.hasCachedIcon(iconId)) {
+                    pendingUpload.set(null);
+                } else {
+                    byte[] pngBytes = BannerIconRenderer.renderBannerPng(currentBanner);
+                    String fileName = BannerIconRenderer.buildFileName(currentBanner);
+                    if (hasWrappedSave) {
+                        pendingUpload.set(new PendingBannerUpload(iconId, pngBytes, fileName));
+                    } else {
+                        XaeroRegionsBridge.uploadIcon(iconId, pngBytes, fileName);
+                    }
+                }
+
+                XaeroRegionsBridge.applyIconRef(screen, iconId);
+                RegionBanners.LOGGER.debug("Selected held banner icon {}", iconId);
 
                 button.setMessage(Component.translatable("region_banners.button.banner_imported"));
                 if (iconButtonRef != null) {

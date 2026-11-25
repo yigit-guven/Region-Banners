@@ -46,10 +46,53 @@ public final class XaeroRegionsBridge {
         }
     }
 
+    public static boolean hasCachedIcon(UUID iconId) {
+        try {
+            Class<?> cacheClass = Class.forName(CLIENT_ICON_CACHE_CLASS);
+            Object cacheInstance = cacheClass.getField("INSTANCE").get(null);
+            Method hasCustom = cacheClass.getMethod("hasCustom", UUID.class);
+            return (boolean) hasCustom.invoke(cacheInstance, iconId);
+        } catch (ReflectiveOperationException e) {
+            RegionBanners.LOGGER.warn("Failed to query ClientIconCache#hasCustom", e);
+            return false;
+        }
+    }
+
+    public static UUID getCurrentCustomIconId(Screen screen) {
+        try {
+            Field iconRefField = screen.getClass().getDeclaredField("iconRef");
+            iconRefField.setAccessible(true);
+            Object iconRef = iconRefField.get(screen);
+            if (iconRef == null) {
+                return null;
+            }
+            Method customIdOrNull = iconRef.getClass().getMethod("customIdOrNull");
+            return (UUID) customIdOrNull.invoke(iconRef);
+        } catch (ReflectiveOperationException e) {
+            RegionBanners.LOGGER.warn("Failed to read RegionEditScreen#iconRef", e);
+            return null;
+        }
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public static UUID uploadAndApplyBannerIcon(Screen screen, byte[] pngBytes, String fileName)
+    public static void applyIconRef(Screen screen, UUID iconId) throws ReflectiveOperationException {
+        Class<?> iconKindClass = Class.forName(REGION_ICON_KIND_CLASS);
+        Object customKind = Enum.valueOf((Class<Enum>) iconKindClass, "CUSTOM");
+
+        Class<?> iconRefClass = Class.forName(REGION_ICON_REF_CLASS);
+        Constructor<?> iconRefCtor = iconRefClass.getConstructor(iconKindClass, String.class);
+        Object iconRef = iconRefCtor.newInstance(customKind, iconId.toString());
+
+        Field iconRefField = screen.getClass().getDeclaredField("iconRef");
+        iconRefField.setAccessible(true);
+        iconRefField.set(screen, iconRef);
+    }
+
+    public static void uploadIcon(UUID iconId, byte[] pngBytes, String fileName)
             throws ReflectiveOperationException {
-        UUID iconId = UUID.randomUUID();
+        if (hasCachedIcon(iconId)) {
+            return;
+        }
 
         Class<?> payloadClass = Class.forName(ICON_UPLOAD_PAYLOAD_CLASS);
         Constructor<?> payloadCtor = payloadClass.getConstructor(UUID.class, String.class, byte[].class);
@@ -64,18 +107,5 @@ public final class XaeroRegionsBridge {
         Object cacheInstance = cacheClass.getField("INSTANCE").get(null);
         Method putCustom = cacheClass.getMethod("putCustom", UUID.class, byte[].class);
         putCustom.invoke(cacheInstance, iconId, pngBytes);
-
-        Class<?> iconKindClass = Class.forName(REGION_ICON_KIND_CLASS);
-        Object customKind = Enum.valueOf((Class<Enum>) iconKindClass, "CUSTOM");
-
-        Class<?> iconRefClass = Class.forName(REGION_ICON_REF_CLASS);
-        Constructor<?> iconRefCtor = iconRefClass.getConstructor(iconKindClass, String.class);
-        Object iconRef = iconRefCtor.newInstance(customKind, iconId.toString());
-
-        Field iconRefField = screen.getClass().getDeclaredField("iconRef");
-        iconRefField.setAccessible(true);
-        iconRefField.set(screen, iconRef);
-
-        return iconId;
     }
 }
