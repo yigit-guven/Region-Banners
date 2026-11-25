@@ -1,2 +1,7 @@
 {
+  "region_banners.button.import_banner_icon": "Import Banner Icon",
+  "region_banners.button.banner_imported": "Banner Imported",
+  "region_banners.message.banner_imported": "Imported held banner as region icon. Click Save to apply.",
+  "region_banners.message.import_failed": "Failed to import banner icon.",
+  "region_banners.message.no_banner": "Hold a banner in your hand to import its icon."
 }

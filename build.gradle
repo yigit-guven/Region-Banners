@@ -24,6 +24,13 @@ sourceSets.main.resources {
 }
 
 repositories {
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content {
+            includeGroup 'maven.modrinth'
+        }
+    }
 }
 
 neoForge {
@@ -74,6 +81,10 @@ configurations {
 }
 
 dependencies {
+    implementation files('libs/xaeroregions-neoforge-1.21.1-1.0.8.jar')
+    implementation "maven.modrinth:xaeros-world-map:${xaeroworldmap_version}"
+    localRuntime "maven.modrinth:xaeros-minimap:${xaerominimap_version}"
+    localRuntime "maven.modrinth:kotlin-for-forge:${kotlinforforge_version}"
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
