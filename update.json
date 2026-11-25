@@ -1,0 +1,10 @@
+{
+  "homepage": "https://github.com/yigit-guven/Region-Banners/releases",
+  "1.21.1": {
+    "1.0.0": "Initial release: import held Minecraft banners as Xaero Regions map icons with multiplayer syncing, deferred save uploads, and banner deduplication."
+  },
+  "promos": {
+    "1.21.1-latest": "1.0.0",
+    "1.21.1-recommended": "1.0.0"
+  }
+}
